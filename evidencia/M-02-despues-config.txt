@@ -1,0 +1,55 @@
+name: aci606-docker-rescue
+services:
+  backend:
+    environment:
+      DATABASE_URL: postgresql://appuser:rescue123@db:5432/appdb
+    networks:
+      default: null
+    build:
+      context: /workspaces/aci606-docker-rescue/backend
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+        required: true
+  db:
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: rescue123
+      POSTGRES_USER: appuser
+    image: postgres:16-alpine
+    networks:
+      default: null
+    volumes:
+      - type: volume
+        source: pgdata
+        target: /var/lib/postgresql/data
+        volume: {}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      timeout: 3s
+      interval: 5s
+      retries: 10
+  frontend:
+    networks:
+      default: null
+    build:
+      context: /workspaces/aci606-docker-rescue/frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_started
+        required: true
+    ports:
+      - mode: ingress
+        target: 80
+        published: "8080"
+        protocol: tcp
+networks:
+  default:
+    name: aci606-docker-rescue_default
+volumes:
+  pgdata:
+    name: aci606-docker-rescue_pgdata

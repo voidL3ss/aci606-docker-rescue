@@ -1,0 +1,6 @@
+5:      - "8080:80"
+12:      DATABASE_URL: "postgresql://appuser:rescue123@db:5432/appdb"
+20:      POSTGRES_USER: appuser
+21:      POSTGRES_PASSWORD: rescue123
+22:      POSTGRES_DB: appdb
+24:      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]

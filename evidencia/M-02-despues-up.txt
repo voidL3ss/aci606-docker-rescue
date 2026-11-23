@@ -1,0 +1,5 @@
+ Container aci606-docker-rescue-frontend-1 Running 
+ Container aci606-docker-rescue-backend-1 Running 
+ Container aci606-docker-rescue-db-1 Running 
+ Container aci606-docker-rescue-db-1 Waiting 
+ Container aci606-docker-rescue-db-1 Healthy 
