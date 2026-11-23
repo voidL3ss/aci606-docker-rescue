@@ -1,0 +1,40 @@
+name: aci606-docker-rescue
+services:
+  backend:
+    environment:
+      DATABASE_URL: postgresql://appuser:wrongpass@localhost:5432/appdb
+    networks:
+      default: null
+    build:
+      context: /workspaces/aci606-docker-rescue/backend
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_started
+        required: true
+  db:
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: rescue123
+      POSTGRES_USER: appuser
+    image: postgres:16-alpine
+    networks:
+      default: null
+  frontend:
+    networks:
+      default: null
+    build:
+      context: /workspaces/aci606-docker-rescue/frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_started
+        required: true
+    ports:
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+networks:
+  default:
+    name: aci606-docker-rescue_default

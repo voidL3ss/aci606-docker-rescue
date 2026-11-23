@@ -1,0 +1,5 @@
+NETWORK ID     NAME                           DRIVER    SCOPE
+f5ddaaf5234b   aci606-docker-rescue_default   bridge    local
+0e31379361db   bridge                         bridge    local
+a5182d668f15   host                           host      local
+082e8178b0b3   none                           null      local
