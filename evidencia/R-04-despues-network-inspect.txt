@@ -1,0 +1,61 @@
+[
+    {
+        "Name": "aci606-docker-rescue_default",
+        "Id": "f5ddaaf5234bc7a70dd6f957b3724fd5874afa70d20e0367e2f73e0713e5a977",
+        "Created": "2026-11-23T18:32:30.523858155Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {},
+        "Labels": {
+            "com.docker.compose.config-hash": "fe70b075dd6f7dce0e4aa95e9b1ca6f3bc9ea8c9c493aab601e1a3097330dcfe",
+            "com.docker.compose.network": "default",
+            "com.docker.compose.project": "aci606-docker-rescue",
+            "com.docker.compose.version": "5.6.1"
+        },
+        "Containers": {
+            "24d93a3412842a5f5a894eb4b1ac0f2fa883d3bfd5535f9475c172310687c4a5": {
+                "Name": "aci606-docker-rescue-frontend-1",
+                "EndpointID": "6c9b17ae5a3b16846d259b8b7d17315c1035029d07d45e400bdcab4c35d2d5b3",
+                "MacAddress": "fa:84:c3:db:60:3f",
+                "IPv4Address": "172.18.0.4/16",
+                "IPv6Address": ""
+            },
+            "36cefd530f03fbf09a9beacbda8edf0d8086a5aabc83b5d8ef11d09a317e43a5": {
+                "Name": "aci606-docker-rescue-db-1",
+                "EndpointID": "33ad793e77a6f7a8414c007b091cdc5dcec79339318376bbded254cba643777f",
+                "MacAddress": "06:52:36:cd:77:24",
+                "IPv4Address": "172.18.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.18.0.0/16": {
+                        "IPsInUse": 5,
+                        "DynamicIPsAvailable": 65531
+                    }
+                }
+            }
+        }
+    }
+]

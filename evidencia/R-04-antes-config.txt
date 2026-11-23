@@ -1,0 +1,1 @@
+      DATABASE_URL: postgresql://appuser:wrongpass@localhost:5432/appdb
