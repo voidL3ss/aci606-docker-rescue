@@ -1,0 +1,2 @@
+ Container aci606-docker-rescue-db-1 Starting 
+ Container aci606-docker-rescue-db-1 Started 

@@ -1,0 +1,11 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   201  100   201    0     0  14135      0 --:--:-- --:--:-- --:--:-- 14357
+HTTP/1.1 503 Service Unavailable
+Server: nginx/1.27.5
+Date: Mon, 23 Nov 2026 19:11:50 GMT
+Content-Type: application/json
+Content-Length: 201
+Connection: keep-alive
+
+{"detail":"database unavailable: (psycopg2.OperationalError) could not translate host name \"db\" to address: Name or service not known\n\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"}

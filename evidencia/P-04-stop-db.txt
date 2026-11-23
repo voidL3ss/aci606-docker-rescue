@@ -1,0 +1,2 @@
+ Container aci606-docker-rescue-db-1 Stopping 
+ Container aci606-docker-rescue-db-1 Stopped 
