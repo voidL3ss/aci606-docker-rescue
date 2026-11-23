@@ -1,0 +1,1 @@
+[{"Type":"volume","Name":"aci606-docker-rescue_pgdata","Source":"/var/lib/docker/volumes/aci606-docker-rescue_pgdata/_data","Destination":"/var/lib/postgresql/data","Driver":"local","Mode":"rw","RW":true,"Propagation":""}]

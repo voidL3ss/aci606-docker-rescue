@@ -1,0 +1,16 @@
+[
+    {
+        "CreatedAt": "2026-11-23T18:55:05Z",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "010675f8ef66497322fc52767366b73828fda6a9f9b1911caf0d441d4064b4f3",
+            "com.docker.compose.project": "aci606-docker-rescue",
+            "com.docker.compose.version": "5.6.1",
+            "com.docker.compose.volume": "pgdata"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/aci606-docker-rescue_pgdata/_data",
+        "Name": "aci606-docker-rescue_pgdata",
+        "Options": null,
+        "Scope": "local"
+    }
+]
