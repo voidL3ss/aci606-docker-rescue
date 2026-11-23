@@ -1,0 +1,177 @@
+ Image aci606-docker-rescue-frontend Building 
+ Image aci606-docker-rescue-backend Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.04kB done
+#1 DONE 0.0s
+
+#2 [frontend internal] load build definition from Dockerfile
+#2 transferring dockerfile: 168B done
+#2 DONE 0.0s
+
+#3 [backend internal] load build definition from Dockerfile
+#3 transferring dockerfile: 243B done
+#3 DONE 0.0s
+
+#4 [backend internal] load metadata for docker.io/library/python:3.12-slim
+#4 DONE 0.1s
+
+#5 [frontend internal] load metadata for docker.io/library/nginx:1.27-alpine
+#5 DONE 0.2s
+
+#6 [backend internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [backend internal] load build context
+#7 transferring context: 159B 0.1s done
+#7 DONE 0.1s
+
+#8 [frontend internal] load .dockerignore
+#8 transferring context: 2B done
+#8 DONE 0.0s
+
+#9 [backend 1/5] FROM docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+#9 resolve docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+#9 resolve docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b 0.1s done
+#9 DONE 0.1s
+
+#10 [backend 2/5] WORKDIR /app
+#10 CACHED
+
+#11 [frontend internal] load build context
+#11 transferring context: 62B done
+#11 DONE 0.0s
+
+#12 [frontend 1/3] FROM docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+#12 resolve docker.io/library/nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 0.1s done
+#12 DONE 0.1s
+
+#13 [frontend 2/3] COPY index.html /usr/share/nginx/html/index.html
+#13 CACHED
+
+#14 [frontend 3/3] COPY nginx.conf /etc/nginx/conf.d/default.conf
+#14 CACHED
+
+#15 [backend 3/5] COPY requirements.txt .
+#15 DONE 0.1s
+
+#16 [frontend] exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:8c0292e36ea831ed390dd9080ba4e4d6f019fb77b6979ae9c9d70439d732de24 done
+#16 exporting config sha256:24f6b9c92aca99fc0055351a5d55e91e74be2f424a63f5358961551dffb2a1bc done
+#16 exporting attestation manifest sha256:1dce033eba8c7a4c022279172ece3644d04392d3869d58578f45e45e9c363289 0.0s done
+#16 exporting manifest list sha256:0d468cf12fc691d5702ad5abd616ce242bf95a427f8651a6e705135c3564ea74 0.0s done
+#16 naming to docker.io/library/aci606-docker-rescue-frontend:latest done
+#16 unpacking to docker.io/library/aci606-docker-rescue-frontend:latest 0.0s done
+#16 DONE 0.2s
+
+#17 [backend 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#17 ...
+
+#18 [frontend] resolving provenance for metadata file
+#18 DONE 0.0s
+
+#17 [backend 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#17 2.723 Collecting fastapi==0.115.5 (from -r requirements.txt (line 1))
+#17 2.788   Downloading fastapi-0.115.5-py3-none-any.whl.metadata (27 kB)
+#17 2.833 Collecting uvicorn==0.32.1 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 2.847   Downloading uvicorn-0.32.1-py3-none-any.whl.metadata (6.6 kB)
+#17 3.222 Collecting SQLAlchemy==2.0.36 (from -r requirements.txt (line 3))
+#17 3.237   Downloading SQLAlchemy-2.0.36-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.7 kB)
+#17 3.337 Collecting psycopg2-binary==2.9.10 (from -r requirements.txt (line 4))
+#17 3.353   Downloading psycopg2_binary-2.9.10-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#17 3.395 Collecting starlette<0.42.0,>=0.40.0 (from fastapi==0.115.5->-r requirements.txt (line 1))
+#17 3.409   Downloading starlette-0.41.3-py3-none-any.whl.metadata (6.0 kB)
+#17 3.576 Collecting pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 (from fastapi==0.115.5->-r requirements.txt (line 1))
+#17 3.591   Downloading pydantic-2.14.4-py3-none-any.whl.metadata (143 kB)
+#17 3.645 Collecting typing-extensions>=4.8.0 (from fastapi==0.115.5->-r requirements.txt (line 1))
+#17 3.659   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+#17 3.687 Collecting click>=7.0 (from uvicorn==0.32.1->uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 3.703   Downloading click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+#17 3.727 Collecting h11>=0.8 (from uvicorn==0.32.1->uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 3.741   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+#17 3.931 Collecting greenlet!=0.4.17 (from SQLAlchemy==2.0.36->-r requirements.txt (line 3))
+#17 3.945   Downloading greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.8 kB)
+#17 4.026 Collecting httptools>=0.6.3 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.041   Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+#17 4.082 Collecting python-dotenv>=0.13 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.100   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
+#17 4.179 Collecting pyyaml>=5.1 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.196   Downloading pyyaml-6.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.3 kB)
+#17 4.246 Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.260   Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.1 kB)
+#17 4.365 Collecting watchfiles>=0.13 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.379   Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#17 4.508 Collecting websockets>=10.4 (from uvicorn[standard]==0.32.1->-r requirements.txt (line 2))
+#17 4.522   Downloading websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.3 kB)
+#17 4.544 Collecting annotated-types>=0.6.0 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.5->-r requirements.txt (line 1))
+#17 4.558   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+#17 5.277 Collecting pydantic-core==2.50.5 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.5->-r requirements.txt (line 1))
+#17 5.291   Downloading pydantic_core-2.50.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (6.6 kB)
+#17 5.312 Collecting typing-inspection>=0.4.4 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.5->-r requirements.txt (line 1))
+#17 5.325   Downloading typing_inspection-0.4.5-py3-none-any.whl.metadata (2.6 kB)
+#17 5.356 Collecting anyio<5,>=3.4.0 (from starlette<0.42.0,>=0.40.0->fastapi==0.115.5->-r requirements.txt (line 1))
+#17 5.370   Downloading anyio-4.16.0-py3-none-any.whl.metadata (4.7 kB)
+#17 5.404 Collecting idna>=2.8 (from anyio<5,>=3.4.0->starlette<0.42.0,>=0.40.0->fastapi==0.115.5->-r requirements.txt (line 1))
+#17 5.418   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+#17 5.444 Downloading fastapi-0.115.5-py3-none-any.whl (94 kB)
+#17 5.462 Downloading uvicorn-0.32.1-py3-none-any.whl (63 kB)
+#17 5.477 Downloading SQLAlchemy-2.0.36-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+#17 5.523    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 100.4 MB/s eta 0:00:00
+#17 5.539 Downloading psycopg2_binary-2.9.10-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.0 MB)
+#17 5.556    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 210.0 MB/s eta 0:00:00
+#17 5.570 Downloading click-8.5.1-py3-none-any.whl (126 kB)
+#17 5.586 Downloading greenlet-3.5.6-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (621 kB)
+#17 5.592    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 621.4/621.4 kB 291.9 MB/s eta 0:00:00
+#17 5.606 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+#17 5.626 Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (552 kB)
+#17 5.633    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 552.8/552.8 kB 128.9 MB/s eta 0:00:00
+#17 5.646 Downloading pydantic-2.14.4-py3-none-any.whl (494 kB)
+#17 5.662 Downloading pydantic_core-2.50.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (2.3 MB)
+#17 5.676    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 185.4 MB/s eta 0:00:00
+#17 5.692 Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
+#17 5.708 Downloading pyyaml-6.0.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (849 kB)
+#17 5.712    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 849.2/849.2 kB 523.3 MB/s eta 0:00:00
+#17 5.726 Downloading starlette-0.41.3-py3-none-any.whl (73 kB)
+#17 5.742 Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+#17 5.759 Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.5 MB)
+#17 5.776    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 342.5 MB/s eta 0:00:00
+#17 5.791 Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (458 kB)
+#17 5.806 Downloading websockets-17.4-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (226 kB)
+#17 5.820 Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+#17 5.834 Downloading anyio-4.16.0-py3-none-any.whl (134 kB)
+#17 5.849 Downloading typing_inspection-0.4.5-py3-none-any.whl (14 kB)
+#17 5.863 Downloading idna-3.20-py3-none-any.whl (69 kB)
+#17 6.016 Installing collected packages: websockets, uvloop, typing-extensions, pyyaml, python-dotenv, psycopg2-binary, idna, httptools, h11, greenlet, click, annotated-types, uvicorn, typing-inspection, SQLAlchemy, pydantic-core, anyio, watchfiles, starlette, pydantic, fastapi
+#17 8.761 Successfully installed SQLAlchemy-2.0.36 annotated-types-0.8.0 anyio-4.16.0 click-8.5.1 fastapi-0.115.5 greenlet-3.5.6 h11-0.16.0 httptools-0.9.0 idna-3.20 psycopg2-binary-2.9.10 pydantic-2.14.4 pydantic-core-2.50.5 python-dotenv-1.2.4 pyyaml-6.0.4 starlette-0.41.3 typing-extensions-4.16.0 typing-inspection-0.4.5 uvicorn-0.32.1 uvloop-0.23.0 watchfiles-1.3.0 websockets-17.4
+#17 8.762 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#17 8.861 
+#17 8.861 [notice] A new release of pip is available: 25.0.1 -> 26.3
+#17 8.861 [notice] To update, run: pip install --upgrade pip
+#17 DONE 10.5s
+
+#19 [backend 5/5] COPY main.py .
+#19 DONE 0.1s
+
+#20 [backend] exporting to image
+#20 exporting layers
+#20 exporting layers 2.4s done
+#20 exporting manifest sha256:28c3ba11a14634fe5338bff4f3787ccdb52165e19f6aed9169b5e355aa670c8d 0.0s done
+#20 exporting config sha256:d45a42c5b2ff7b931791be50a51e3611a981b13258bd50241760bcf38209c0e1 0.0s done
+#20 exporting attestation manifest sha256:631db894d0d3f63541ddbe0fd97cd4358fcf4673044c29225fb6d03b49fe9855 0.0s done
+#20 exporting manifest list sha256:614d3a5259d050ed73c8218dfbf27cc255161f7db2d985400ffe367f35ccac40 0.0s done
+#20 naming to docker.io/library/aci606-docker-rescue-backend:latest done
+#20 unpacking to docker.io/library/aci606-docker-rescue-backend:latest
+#20 unpacking to docker.io/library/aci606-docker-rescue-backend:latest 0.9s done
+#20 DONE 3.4s
+
+#21 [backend] resolving provenance for metadata file
+#21 DONE 0.0s
+ Image aci606-docker-rescue-frontend Built 
+ Image aci606-docker-rescue-backend Built 
+ Container aci606-docker-rescue-frontend-1 Running 
+ Container aci606-docker-rescue-db-1 Running 
+ Container aci606-docker-rescue-backend-1 Recreate 
+ Container aci606-docker-rescue-backend-1 Recreated 
+ Container aci606-docker-rescue-backend-1 Starting 
+ Container aci606-docker-rescue-backend-1 Started 
