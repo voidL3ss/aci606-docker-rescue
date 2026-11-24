@@ -637,7 +637,7 @@ El mensaje de error permite distinguir tres fallas de base de datos distintas, v
 \large\url{\repourl}
 \end{center}
 
-El repositorio contiene el proyecto reparado (\cod{compose.yaml}, \cod{backend/}, \cod{frontend/}), \cod{.env.example}, el \cod{README.md} con el diagrama de arquitectura y los procedimientos para construir, iniciar, verificar, detener y recrear la solución, el script de validación \cod{scripts/p07-validacion-limpia.sh}, la carpeta \cod{evidencia/} y este informe en \cod{informe/}. Cada reparación, mejora y prueba tiene su propio commit (Anexo~\ref{anx:historial}).
+El repositorio contiene el proyecto reparado (\cod{compose.yaml}, \cod{backend/}, \cod{frontend/}), \cod{.env.example}, el \cod{README.md} con el diagrama de arquitectura y los procedimientos para construir, iniciar, verificar, detener y recrear la solución, el script de validación \cod{scripts/p07-validacion-limpia.sh}, la carpeta \cod{evidencia/} y este informe en \cod{informe/}. Cada reparación, mejora y prueba tiene su propio commit (Anexo~\ref{anx:historial}). El origen del trabajo en un repositorio inicial se detalla en el Anexo~\ref{anx:origen}, y el uso de herramientas de IA en el Anexo~\ref{anx:ia}.
 
 % ============================================================================
 \clearpage
@@ -653,6 +653,28 @@ El repositorio contiene el proyecto reparado (\cod{compose.yaml}, \cod{backend/}
 \IfFileExists{evidencias.txt}
   {\lstinputlisting[style=term, basicstyle=\ttfamily\scriptsize, multicols=3]{evidencias.txt}}
   {\textit{Se genera al compilar con \cod{latexmk} (contenido de \cod{evidencia/}).}}
+
+\subsection{Origen del trabajo: repositorio inicial}\label{anx:origen}
+El trabajo comenzó en un repositorio local de Samuel Campos, sin remoto en GitHub. En él se registró el estado inicial del starter, se capturó la evidencia del diagnóstico y se corrigieron las dos primeras incidencias, documentadas en una bitácora (\cod{BITACORA.md}):
+
+\begin{lstlisting}[style=term]
+37412a0  2026-11-23  chore: estado inicial del starter recibido (sin reparaciones)
+4090664  2026-11-23  chore: agregar .gitignore (excluye .env, __pycache__, CLAUDE.md y conflictos de Syncthing)
+e75f9b2  2026-11-23  docs: evidencia del estado inicial y diagnóstico de R-01 y R-02
+e0fa392  2026-11-23  fix(R-01): corregir mapeo de puertos del frontend (8080:8080 -> 8080:80)
+e6e49e0  2026-11-23  fix(R-02): corregir módulo ASGI en CMD de uvicorn (app:app -> main:app)
+\end{lstlisting}
+
+Ese avance se traspasó a David Fevre como archivos locales, no como historial de git. David creó el repositorio definitivo en GitHub y continuó el trabajo allí. Por eso los commits anteriores no aparecen en el historial del Anexo~\ref{anx:historial}, y R-01 y R-02 figuran en el repositorio definitivo con commits propios (\cod{530f0a0} y \cod{a1d5b76}). La redacción de las fichas de R-01 y R-02 de la Sección~4 toma como base la bitácora del repositorio inicial.
+
+\subsection{Uso de herramientas de IA}\label{anx:ia}
+Durante el proyecto se usó Claude (Anthropic), mediante Claude Code, como herramienta de apoyo.
+
+\begin{itemize}
+  \item \textbf{Apoyo para consultas.} El equipo usó la IA para resolver dudas sobre Docker, Docker Compose y el diagnóstico de las fallas. Los commits del equipo no llevan marca de IA: del \cod{84809ef} al \cod{aaeaac4} (R-01 a R-07, M-01, M-03, la primera versión de M-02 y las pruebas P-01 a P-06) y el \cod{a2f4a37} (ejecución de P-07 en el Codespace).
+  \item \textbf{Cambios elaborados con asistencia de la IA.} Los commits que incluyen la línea \cod{Co-Authored-By: Claude} se elaboraron con asistencia directa de la IA: la corrección de M-02 (\cod{7b161a1}), el script de P-07 (\cod{b5ada03}), el \cod{README.md} (\cod{c4d3f43}) y la redacción de este informe a partir de la evidencia del equipo (\cod{f39e1e1} en adelante).
+  \item \textbf{Revisión.} El equipo revisó cada cambio. Las afirmaciones técnicas del informe se respaldan en la salida real de los comandos, guardada en la carpeta \cod{evidencia/}.
+\end{itemize}
 
 \clearpage
 \subsection{Archivos finales}\label{anx:archivos}
