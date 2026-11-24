@@ -1,0 +1,6 @@
+$ git ls-files | grep -E '(^|/)\.env$' || echo '.env no está versionado'
+.env no está versionado
+
+$ git check-ignore -v .env
+.gitignore:1:.env	.env
+

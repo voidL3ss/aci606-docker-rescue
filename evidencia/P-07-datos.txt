@@ -1,0 +1,17 @@
+$ curl -sS -i --fail-with-body -X POST http://localhost:8080/api/items -H Content-Type: application/json -d {"name":"p07-codespace-limpio"}
+HTTP/1.1 201 Created
+Server: nginx/1.27.5
+Date: Tue, 24 Nov 2026 12:58:26 GMT
+Content-Type: application/json
+Content-Length: 80
+Connection: keep-alive
+
+{"id":1,"name":"p07-codespace-limpio","created_at":"2026-11-24T12:58:26.348040"}
+$ curl -sS --fail-with-body http://localhost:8080/api/items
+[{"id":1,"name":"p07-codespace-limpio","created_at":"2026-11-24T12:58:26.348040"}]
+$ docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, name FROM items ORDER BY id;"'
+ id |         name         
+----+----------------------
+  1 | p07-codespace-limpio
+(1 row)
+

@@ -1,0 +1,21 @@
+$ date -Iseconds
+2026-11-24T12:57:22+00:00
+
+$ git log -1 --oneline
+f71a497 docs(informe): integrantes en la portada y sin campo de sección
+
+$ git status --short
+?? evidencia/P-07-entorno.txt
+
+$ docker version --format Docker Engine {{.Server.Version}}
+Docker Engine 29.9.2-2
+
+$ docker compose version
+Docker Compose version v5.6.1
+
+$ ls -la .env
+ls: cannot access '.env': No such file or directory
+
+$ docker volume ls --filter name=aci606-docker-rescue_
+DRIVER    VOLUME NAME
+
