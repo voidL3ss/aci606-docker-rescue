@@ -1,3 +1,16 @@
 .env
 __pycache__/
 *.pyc
+
+# LaTeX (informe/): auxiliares de compilación, anexos generados y PDF (se entrega aparte)
+informe/*.aux
+informe/*.log
+informe/*.out
+informe/*.toc
+informe/*.fls
+informe/*.fdb_latexmk
+informe/*.xdv
+informe/*.synctex.gz
+informe/historial.txt
+informe/evidencias.txt
+informe/*.pdf

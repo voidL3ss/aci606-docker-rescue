@@ -1,0 +1,273 @@
+% ============================================================================
+%  ACI606 — Evaluación 2: Docker Rescue Challenge — Informe técnico
+%  Compilar:  cd informe && latexmk        (XeLaTeX, ver .latexmkrc)
+% ============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------- datos ----
+% Completar antes de compilar la versión de entrega.
+\newcommand{\integrantes}{%
+  Integrante 1 \\
+  Integrante 2}
+\newcommand{\seccion}{Sección: \_\_\_\_}
+\newcommand{\fechaentrega}{\today}
+\newcommand{\repourl}{https://github.com/voidL3ss/aci606-docker-rescue}
+
+% ------------------------------------------------------------ idioma/fuentes
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{spanish}
+\setmainfont{texgyrepagella}[Extension=.otf, UprightFont=*-regular,
+  BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular,
+  BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setmonofont{DejaVuSansMono}[Extension=.ttf, UprightFont=*,
+  BoldFont=*-Bold, ItalicFont=*-Oblique, BoldItalicFont=*-BoldOblique, Scale=0.84]
+
+% ----------------------------------------------------------------- página --
+\usepackage[a4paper, top=2.2cm, bottom=2.2cm, left=2.3cm, right=2.3cm,
+  headheight=14pt]{geometry}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{booktabs, tabularx, array, longtable}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, shapes.geometric, calc}
+\usepackage{csquotes}
+\usepackage{xurl}
+\usepackage{hyperref}
+
+% ---------------------------------------------------------------- colores --
+\definecolor{docker}{HTML}{1D63ED}
+\definecolor{fallo}{HTML}{C0392B}
+\definecolor{ok}{HTML}{1E8449}
+\definecolor{gris}{HTML}{5D6D7E}
+\definecolor{fondo}{HTML}{F4F6F7}
+\definecolor{aviso}{HTML}{B9770E}
+
+% ---------------------------------------------------------------- estilos --
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}   % evita desbordes por \texttt sin guionado
+\setlist{itemsep=0.15em, topsep=0.3em, parsep=0pt}
+\titleformat{\section}{\sffamily\Large\bfseries\color{docker}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\sffamily\large\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\sffamily\normalsize\bfseries}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.5em}
+\titlespacing*{\subsection}{0pt}{1em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.8em}{0.25em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small\color{gris}ACI606 · Docker Rescue Challenge}
+\fancyhead[R]{\sffamily\small\color{gris}Informe técnico}
+\fancyfoot[C]{\sffamily\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\captionsetup{font=small, labelfont={bf,sf}, labelsep=period}
+\gappto\captionsspanish{\renewcommand{\tablename}{Tabla}\renewcommand{\listtablename}{Índice de tablas}}
+
+\hypersetup{colorlinks=true, linkcolor=docker, urlcolor=docker, citecolor=docker,
+  pdftitle={Docker Rescue Challenge — Informe técnico},
+  pdfsubject={ACI606 Especialidad II: Cloud Computing}}
+
+% Bloques de terminal / evidencia
+\lstdefinestyle{term}{
+  basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=false, upquote=true, showstringspaces=false,
+  backgroundcolor=\color{fondo}, frame=leftline, framerule=2pt, rulecolor=\color{docker},
+  xleftmargin=6pt, framexleftmargin=6pt, aboveskip=0.4em, belowskip=0.4em,
+  postbreak=\mbox{\textcolor{gris}{$\hookrightarrow$}\space},
+  moredelim=[is][\color{fallo}\bfseries]{§}{§},
+  moredelim=[is][\color{ok}\bfseries]{¦}{¦}}
+\lstdefinestyle{file}{style=term, basicstyle=\ttfamily\scriptsize, numbers=left,
+  numberstyle=\tiny\color{gris}, rulecolor=\color{gris}}
+\lstset{style=term}
+\captionsetup[lstlisting]{font={small,sf}, labelformat=empty, singlelinecheck=false,
+  skip=2pt, margin=0pt}
+
+% Rótulo de archivo de evidencia
+\newcommand{\ev}[1]{{\small\nolinkurl{evidencia/#1}}}
+% Código en línea
+\newcommand{\cod}[1]{\texttt{#1}}
+% Rutas/identificadores largos que pueden partirse en cualquier carácter (sin escapar _)
+\newcommand{\ruta}[1]{\nolinkurl{#1}}
+% Marca de trabajo pendiente (debe desaparecer en la versión de entrega)
+\newcommand{\pendiente}[1]{\textcolor{aviso}{\bfseries[PENDIENTE: #1]}}
+
+% Ficha de incidencia: los 8 campos de la pauta (sección 6)
+\newenvironment{ficha}
+  {\par\small\rowcolors{1}{fondo}{white}%
+   \noindent\tabularx{\linewidth}{@{}>{\raggedright\arraybackslash\bfseries\sffamily}p{2.75cm}>{\raggedright\arraybackslash}X@{}}\toprule}
+  {\bottomrule\endtabularx\par}
+\newcommand{\campo}[2]{#1 & #2 \\}
+
+% Estilos TikZ
+\tikzset{
+  svc/.style={draw=docker, very thick, rounded corners=4pt, fill=docker!6,
+    minimum width=3.3cm, minimum height=1.5cm, align=center, font=\small},
+  ext/.style={draw=gris, thick, rounded corners=4pt, fill=white,
+    minimum width=2.4cm, minimum height=1.1cm, align=center, font=\small},
+  vol/.style={cylinder, shape border rotate=90, aspect=0.22, draw=gris, thick,
+    fill=gris!10, minimum width=2cm, minimum height=1.1cm, align=center, font=\scriptsize},
+  falla/.style={fill=fallo, text=white, rounded corners=2pt, inner sep=2pt,
+    font=\scriptsize\bfseries\sffamily},
+  flecha/.style={-{Stealth[length=2.6mm]}, thick},
+  etq/.style={font=\scriptsize, align=center, fill=white, inner sep=1.5pt},
+}
+
+% ============================================================================
+\begin{document}
+
+% ---------------------------------------------------------------- portada --
+\begin{titlepage}
+  \sffamily
+  \vspace*{1.5cm}
+  {\large\color{gris} ACI606 · Especialidad II: Cloud Computing\par}
+  \vspace{0.6cm}
+  {\Huge\bfseries\color{docker} Docker Rescue Challenge\par}
+  \vspace{0.3cm}
+  {\Large Diagnóstico, reparación y validación de una aplicación containerizada\par}
+  \vspace{0.3cm}
+  {\large Evaluación 2 · Informe técnico\par}
+  \vspace{1.2cm}
+  {\color{docker}\rule{\linewidth}{1.2pt}}
+  \vspace{0.8cm}
+
+  \begin{tabular}{@{}ll@{}}
+    \textbf{Integrantes:} & \begin{tabular}[t]{@{}l@{}}\integrantes\end{tabular} \\[0.6em]
+    \textbf{Sección:}     & \seccion \\[0.6em]
+    \textbf{Fecha:}       & \fechaentrega \\[0.6em]
+    \textbf{Repositorio:} & \url{\repourl} \\
+  \end{tabular}
+
+  \vfill
+  \rmfamily\small
+  \tableofcontents
+\end{titlepage}
+\setcounter{page}{1}
+
+% ============================================================================
+\section{Resumen ejecutivo}
+
+Se recibió una aplicación web de tres servicios —\textbf{frontend} (Nginx), \textbf{backend} (FastAPI) y \textbf{base de datos} (PostgreSQL)— orquestada con Docker Compose y entregada con fallas deliberadas, sin indicación de cuántas ni dónde.
+
+\textbf{Estado inicial.} Las imágenes se construían sin errores, por lo que todas las fallas eran de \emph{ejecución}. El backend terminaba con \cod{Exited (1)} segundos después de iniciar, y el frontend aparecía como \cod{Up} pero rechazaba las conexiones desde el host: un servicio \enquote{en ejecución} no implicaba un servicio operativo.
+
+\textbf{Problemas detectados.} Se identificaron y corrigieron \textbf{siete incidencias} (R-01 a R-07) que aparecieron \emph{en cascada}: cada reparación dejaba a la vista la siguiente, que hasta ese momento estaba oculta. Abarcan cinco categorías: publicación de puertos (R-01), comando de arranque de la imagen (R-02), dependencias de Python (R-03), uso incorrecto de \cod{localhost} entre contenedores (R-04, R-06), credenciales inconsistentes (R-05) y orden de arranque sin verificación de disponibilidad (R-07).
+
+\textbf{Resultado.} El sistema se levanta con un único comando (\cod{docker compose up --build -d}) y los tres servicios quedan \cod{(healthy)}. El frontend consume la API a través de Nginx y la API lee y escribe en PostgreSQL. Además se incorporaron las mejoras obligatorias: volumen nombrado para los datos (M-01), configuración externalizada con valores por defecto y \cod{.env} opcional (M-02), y healthchecks en los tres servicios con orden de arranque por disponibilidad (M-03). Se demostraron arranque limpio, comunicación, persistencia, fallo controlado, diagnóstico y recuperación (P-01 a P-06), y la validación en un entorno limpio (P-07). Cada paso tiene un commit propio y la salida real de los comandos está en la carpeta \cod{evidencia/} del repositorio.
+
+% ============================================================================
+\section{Arquitectura inicial}
+
+El paquete recibido contiene \cod{compose.yaml}, \cod{backend/} (\cod{Dockerfile}, \cod{requirements.txt}, \cod{main.py}) y \cod{frontend/} (\cod{Dockerfile}, \cod{nginx.conf}, \cod{index.html}). El flujo previsto es: el navegador carga \cod{index.html} desde Nginx; el JavaScript llama a \cod{/api/health} y \cod{/api/items}; Nginx reenvía \cod{/api/*} al backend, y el backend consulta PostgreSQL con SQLAlchemy. Al iniciar, el backend crea la tabla \cod{items} si no existe.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.0cm and 1.5cm,
+    svc/.append style={minimum width=2.9cm}, ext/.append style={minimum width=2cm}]
+  \node[ext] (host) {Host\\\scriptsize navegador\\\scriptsize \cod{curl}};
+  \node[svc, right=of host] (fe) {\textbf{frontend}\\\scriptsize nginx:1.27-alpine\\\scriptsize \cod{listen 80}};
+  \node[svc, right=of fe] (be) {\textbf{backend}\\\scriptsize python:3.12-slim\\\scriptsize \cod{uvicorn app:app}};
+  \node[svc, right=of be] (db) {\textbf{db}\\\scriptsize postgres:16-alpine\\\scriptsize \cod{PASSWORD=rescue123}};
+  \node[vol, below=0.8cm of db] (vol) {volumen\\anónimo};
+
+  \draw[flecha] (host) -- node[etq, above=3pt] (l1) {\cod{8080}\\\cod{:8080}} (fe);
+  \draw[flecha] (fe) -- node[etq, above=3pt] (l2) {\cod{localhost}\\\cod{:8000}} (be);
+  \draw[flecha] (be) -- node[etq, above=3pt] (l3) {\cod{localhost}\\\cod{:5432}\\\cod{wrongpass}} (db);
+  \draw[gris, thick] (db) -- (vol);
+  \draw[flecha, dashed, gris] (be.south) to[bend right=25]
+    node[etq, below=1pt, pos=0.45] (l4) {\cod{depends\_on: db} (solo \enquote{iniciado})} (db.south west);
+
+  \node[falla, above=2pt of l1] {R-01};
+  \node[falla, above=2pt of l2] {R-06};
+  \node[falla, above=2pt of l3] {R-04 · R-05};
+  \node[falla, above=3pt of be] {R-02 · R-03};
+  \node[falla, left=3pt of l4] {R-07};
+\end{tikzpicture}
+\caption{Arquitectura recibida. En rojo, la ubicación de cada falla encontrada.}
+\label{fig:arq-inicial}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{5.2cm}@{}}
+\toprule
+\textbf{Servicio} & \textbf{Configuración recibida} & \textbf{Observación} \\
+\midrule
+\cod{frontend} & \cod{ports: "8080:8080"}, \cod{depends\_on: backend} & Nginx escucha en el 80 (\cod{EXPOSE 80}). \\
+\cod{backend}  & \cod{DATABASE\_URL=}\nolinkurl{postgresql://appuser:wrongpass@localhost:5432/appdb} & Sin healthcheck; crea la tabla en el evento \cod{startup}. \\
+\cod{db}       & \cod{POSTGRES\_USER=appuser}, \cod{POSTGRES\_PASSWORD=rescue123}, \cod{POSTGRES\_DB=appdb} & Sin volumen declarado: la imagen crea un volumen anónimo. \\
+\bottomrule
+\end{tabularx}
+\caption{Configuración relevante del \cod{compose.yaml} recibido (\ev{00-config-inicial.txt}).}
+\end{table}
+
+Los tres servicios comparten la red \emph{bridge} por defecto del proyecto (\ruta{aci606-docker-rescue_default}), que provee resolución DNS por nombre de servicio (\ev{00-network-ls-inicial.txt}). Solo el frontend publica un puerto en el host.
+
+% ============================================================================
+\section{Metodología de diagnóstico}
+
+\textbf{Estrategia.} Se siguió el recorrido de una petición \emph{de afuera hacia adentro} (host $\to$ frontend $\to$ backend $\to$ base de datos), atacando siempre la falla \emph{más externa visible}. Como las fallas estaban encadenadas, cada reparación se verificó antes de seguir: si el síntoma cambiaba por otro error, ese nuevo error era la siguiente incidencia y confirmaba que la anterior estaba resuelta. Se aplicaron cuatro reglas:
+
+\begin{enumerate}
+  \item \textbf{Evidencia antes del cambio.} Cada falla se reprodujo y su salida se guardó en un archivo \cod{-antes-} de la carpeta \cod{evidencia/} antes de modificar ningún archivo del proyecto.
+  \item \textbf{Un cambio por incidencia.} Así cada efecto se puede atribuir a una sola causa. Por ejemplo, el host y la contraseña de \cod{DATABASE\_URL} están en la misma línea, pero se corrigieron por separado (R-04 y R-05) para obtener la evidencia propia de cada falla.
+  \item \textbf{Verificación con un comando distinto del síntoma.} Por ejemplo, \cod{docker inspect} o \cod{netstat} dentro del contenedor, no solo \cod{docker compose ps}, que muestra \cod{Up} aunque el servicio no funcione.
+  \item \textbf{Trazabilidad.} Un commit por reparación (\cod{fix(R-0X)}), mejora (\cod{feat(M-0X)}) o prueba (\cod{test}), con la evidencia incluida en el mismo commit.
+\end{enumerate}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\raggedright}p{5.6cm} X@{}}
+\toprule
+\normalfont\textbf{Comando} & \textbf{Uso en este proyecto} \\
+\midrule
+docker compose ps & Estado y código de salida de cada contenedor; puertos publicados (R-01, R-02, R-07). \\
+docker compose logs <servicio> & Trazas de Uvicorn/SQLAlchemy (R-02 a R-05, R-07), errores de \emph{upstream} de Nginx (R-06) y autenticación en PostgreSQL (R-05). \\
+docker compose config & Configuración final interpolada: \cod{DATABASE\_URL}, puertos y variables (R-04, R-05, M-02). \\
+docker inspect <contenedor> & Comando real (\cod{.Config.Cmd}), montajes (\cod{.Mounts}) y estado del healthcheck (\cod{.State.Health}) (R-02, M-01, M-03, P-05). \\
+docker compose exec / run & Inspección dentro del contenedor: \cod{netstat}, archivos de \cod{/app}, \cod{pip list}, resolución DNS y \cod{psql} (R-01 a R-04, P-02). \\
+docker network ls / inspect & Red \emph{bridge} del proyecto e IP de cada servicio (R-04). \\
+docker volume ls / inspect & Volumen anónimo inicial frente al volumen nombrado \cod{pgdata} (M-01, P-03). \\
+curl -i & Respuesta HTTP extremo a extremo a través de Nginx (\cod{/}, \cod{/api/health}, \cod{/api/items}). \\
+\bottomrule
+\end{tabularx}
+\caption{Herramientas de diagnóstico utilizadas.}
+\end{table}
+
+La evidencia está en la carpeta \cod{evidencia/} con la convención \ruta{<ID>-antes|despues-<descripcion>.txt}: \cod{00-*} es la línea base, \cod{R-*} son reparaciones, \cod{M-*} mejoras y \cod{P-*} pruebas. El índice completo está en el Anexo~\ref{anx:evidencias}.
+
+% ============================================================================
+\section{Bitácora de reparaciones}
+\pendiente{bitácora R-01 a R-07}
+
+% ============================================================================
+\section{Arquitectura final}
+\pendiente{arquitectura final y mejoras M-01 a M-03}
+
+% ============================================================================
+\section{Pruebas de validación}
+\pendiente{pruebas P-01 a P-07}
+
+% ============================================================================
+\section{Conclusiones}
+\pendiente{conclusiones}
+
+% ============================================================================
+\section{Repositorio}
+\url{\repourl}
+
+% ============================================================================
+\appendix
+\section{Anexos}
+\subsection{Índice de evidencias}\label{anx:evidencias}
+\pendiente{anexos}
+
+\end{document}
