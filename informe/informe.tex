@@ -32,7 +32,7 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{enumitem}
-\usepackage{booktabs, tabularx, array, longtable}
+\usepackage{booktabs, tabularx, array, longtable, xltabular}
 \usepackage{caption}
 \usepackage{float}
 \usepackage{listings}
@@ -101,10 +101,13 @@
 \newcommand{\pendiente}[1]{\textcolor{aviso}{\bfseries[PENDIENTE: #1]}}
 
 % Ficha de incidencia: los 8 campos de la pauta (sección 6)
+% (xltabular: la ficha puede continuar en la página siguiente)
+\setlength{\LTpre}{0.3em}
+\setlength{\LTpost}{0.3em}
 \newenvironment{ficha}
   {\par\small\rowcolors{1}{fondo}{white}%
-   \noindent\tabularx{\linewidth}{@{}>{\raggedright\arraybackslash\bfseries\sffamily}p{2.75cm}>{\raggedright\arraybackslash}X@{}}\toprule}
-  {\bottomrule\endtabularx\par}
+   \xltabular{\linewidth}{@{}>{\raggedright\arraybackslash\bfseries\sffamily}p{2.75cm}>{\raggedright\arraybackslash}X@{}}\toprule}
+  {\bottomrule\endxltabular\par}
 \newcommand{\campo}[2]{#1 & #2 \\}
 
 % Estilos TikZ
@@ -246,7 +249,199 @@ La evidencia está en la carpeta \cod{evidencia/} con la convención \ruta{<ID>-
 
 % ============================================================================
 \section{Bitácora de reparaciones}
-\pendiente{bitácora R-01 a R-07}
+
+Las incidencias aparecen en el orden en que se encontraron. Cada ficha recoge los ocho campos que exige la pauta. Debajo de cada una hay extractos literales de la evidencia: en \textcolor{fallo}{\bfseries rojo}, el dato que delata la falla, y en \textcolor{ok}{\bfseries verde}, el que confirma la reparación. Al lado del título de cada incidencia figura el commit que contiene el cambio y su evidencia.
+
+% ---------------------------------------------------------------------------
+\subsection{R-01 — Puerto publicado incorrecto en el frontend \hfill{\normalfont\small\cod{530f0a0}}}
+
+\begin{ficha}
+\campo{Síntoma}{El contenedor \cod{frontend} figura \cod{Up}, pero \cod{http://localhost:8080} no responde: \cod{curl} termina con \cod{Connection reset by peer}.}
+\campo{Evidencia}{\cod{docker compose ps} publica \cod{0.0.0.0:8080->8080/tcp} y deja \cod{80/tcp} sin publicar; dentro del contenedor, Nginx escucha solo en \cod{0.0.0.0:80}; \cod{nginx.conf} declara \cod{listen 80}.}
+\campo{Causa raíz}{\cod{ports} usa el formato \cod{HOST:CONTENEDOR}. \cod{"8080:8080"} reenvía el tráfico al puerto \textbf{8080 del contenedor}, donde ningún proceso escucha. El proxy de Docker acepta la conexión en el host, pero al no poder entregarla la reinicia (\emph{reset}).}
+\campo{Elemento modificado}{\cod{compose.yaml}, servicio \cod{frontend}, clave \cod{ports}.}
+\campo{Reparación}{\cod{"8080:8080"} $\to$ \cod{"8080:80"}.}
+\campo{Justificación}{El puerto del contenedor debe coincidir con el del proceso. Se corrigió el mapeo y no Nginx, porque el 80 es coherente con \cod{EXPOSE 80} y con la imagen oficial; el puerto del host (8080) se conserva.}
+\campo{Verificación}{Tras recrear el frontend, \cod{ps} muestra \cod{0.0.0.0:8080->80/tcp} y \cod{curl -i localhost:8080/} devuelve \cod{HTTP/1.1 200 OK} con el \cod{index.html}.}
+\campo{Impacto}{Sin esta reparación, la aplicación es inaccesible para el usuario aunque los servicios funcionen. Además, el estado \cod{Up} oculta la falla si solo se mira \cod{ps}.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-01-antes-ps.txt
+aci606-docker-rescue-frontend-1  ...  Up About a minute   80/tcp, §0.0.0.0:8080->8080/tcp§
+# evidencia/R-01-antes-curl.txt
+* Connected to localhost (::1) port 8080
+§* Recv failure: Connection reset by peer§
+# evidencia/R-01-antes-netstat.txt  (dentro del contenedor frontend)
+tcp        0      0 §0.0.0.0:80§              0.0.0.0:*               LISTEN
+# --- después ---  evidencia/R-01-despues-ps.txt, R-01-despues-curl.txt
+aci606-docker-rescue-frontend-1  ...  Up 11 seconds   ¦0.0.0.0:8080->80/tcp¦, [::]:8080->80/tcp
+¦HTTP/1.1 200 OK¦
+Server: nginx/1.27.5
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-02 — Módulo ASGI inexistente en el arranque del backend \hfill{\normalfont\small\cod{a1d5b76}}}
+
+\begin{ficha}
+\campo{Síntoma}{El contenedor \cod{backend} termina con \cod{Exited (1)} segundos después de iniciar.}
+\campo{Evidencia}{Log: \cod{Error loading ASGI app. Could not import module "app"}. Dentro de la imagen, \cod{/app} solo contiene \cod{main.py} y \cod{requirements.txt}.}
+\campo{Causa raíz}{El \cod{CMD} ejecuta \cod{uvicorn app:app}. Uvicorn interpreta \cod{módulo:variable} y busca \cod{app.py}, pero el Dockerfile copia \cod{main.py}, que es donde está definido \cod{app = FastAPI(...)}. Al fallar la importación, el proceso principal termina y el contenedor se detiene.}
+\campo{Elemento modificado}{\cod{backend/Dockerfile}, instrucción \cod{CMD}.}
+\campo{Reparación}{\cod{uvicorn app:app} $\to$ \cod{uvicorn main:app}.}
+\campo{Justificación}{Se corrigió la referencia en lugar de renombrar \cod{main.py}, para no modificar el código fuente de la aplicación.}
+\campo{Verificación}{El error de importación desaparece: el traceback ahora pasa por \cod{/app/main.py}, línea 13, lo que prueba que el módulo se carga. El contenedor sigue cayendo, pero por una falla distinta que esta ocultaba (R-03).}
+\campo{Impacto}{Sin esta reparación, la API no arranca y nadie accede a la base de datos. Además, oculta todas las fallas siguientes del backend.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-02-antes-ps.txt, R-02-antes-logs.txt
+aci606-docker-rescue-backend-1  "uvicorn app:app --h..."  backend  ...  §Exited (1)§ 40 seconds ago
+backend-1  | ERROR:    Error loading ASGI app. §Could not import module "app".§
+# evidencia/R-02-antes-ls-app.txt  (contenido de /app en la imagen)
+main.py
+requirements.txt
+# --- después ---  evidencia/R-02-despues-logs.txt
+backend-1  |   File "¦/app/main.py¦", line 13, in <module>
+backend-1  |     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+backend-1  | §ModuleNotFoundError: No module named 'psycopg2'§
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-03 — Falta el driver de PostgreSQL \hfill{\normalfont\small\cod{ff7b422}}}
+
+\begin{ficha}
+\campo{Síntoma}{El backend sigue en \cod{Exited (1)}, ahora con \cod{ModuleNotFoundError: No module named 'psycopg2'}.}
+\campo{Evidencia}{\cod{requirements.txt} solo declara \cod{fastapi}, \cod{uvicorn[standard]} y \cod{SQLAlchemy}. Un \cod{pip list} dentro de la imagen (25 líneas) no muestra ningún driver de PostgreSQL.}
+\campo{Causa raíz}{SQLAlchemy no incluye drivers de bases de datos. Con una URL \cod{postgresql://} usa por defecto el dialecto \cod{psycopg2}, que importa al ejecutar \cod{create\_engine()}. Esa llamada ocurre al importar \cod{main.py}, así que el backend cae antes de servir peticiones.}
+\campo{Elemento modificado}{\cod{backend/requirements.txt}.}
+\campo{Reparación}{Se agrega \cod{psycopg2-binary==2.9.10}.}
+\campo{Justificación}{La variante \cod{-binary} trae \cod{libpq} precompilada, así que no hace falta instalar \cod{gcc} ni \cod{libpq-dev} en la imagen \cod{slim}. La versión fija mantiene el build reproducible, igual que el resto de dependencias.}
+\campo{Verificación}{Tras reconstruir, \cod{pip list} muestra \cod{psycopg2-binary 2.9.10}. Uvicorn inicia (\cod{Started server process}) y llega al evento \cod{startup}, donde aparece un error nuevo de conexión a \cod{localhost} (R-04).}
+\campo{Impacto}{Sin esta reparación, el backend no puede importar la aplicación y ninguna ruta llega a existir.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-03-antes-requirements.txt
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+SQLAlchemy==2.0.36
+# --- después ---  evidencia/R-03-despues-pip-list.txt, R-03-despues-logs.txt
+¦psycopg2-binary   2.9.10¦
+backend-1  | INFO:     ¦Started server process [1]¦
+backend-1  | INFO:     Waiting for application startup.
+backend-1  | sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) connection to server at §"localhost" (::1), port 5432 failed: Connection refused§
+backend-1  | ERROR:    Application startup failed. Exiting.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-04 — Uso de \texttt{localhost} para llegar a la base de datos \hfill{\normalfont\small\cod{1af364d}}}
+
+\begin{ficha}
+\campo{Síntoma}{El backend cae en el \cod{startup}: \cod{connection to server at "localhost" ... port 5432 failed: Connection refused}.}
+\campo{Evidencia}{\cod{docker compose config} muestra \cod{DATABASE\_URL=...@localhost:5432/appdb}, mientras PostgreSQL corre en otro contenedor (\cod{db}, \cod{Up}).}
+\campo{Causa raíz}{Cada contenedor tiene su propio espacio de red: \cod{localhost} dentro de \cod{backend} es el propio backend, donde no hay nada escuchando en el 5432. Los servicios de Compose se encuentran por \textbf{nombre de servicio}, que resuelve el DNS interno de Docker (\cod{127.0.0.11}, visible también en el \cod{netstat} de R-01).}
+\campo{Elemento modificado}{\cod{compose.yaml}, servicio \cod{backend}, host de \cod{DATABASE\_URL}.}
+\campo{Reparación}{\cod{@localhost:5432} $\to$ \cod{@db:5432}. A propósito, solo se cambió el host, para aislar la falla de credenciales (R-05).}
+\campo{Justificación}{El nombre \cod{db} es estable aunque el contenedor se recree y cambie de IP. Usar la IP directamente funcionaría hoy, pero se rompería en el siguiente \cod{up}.}
+\campo{Verificación}{Desde el backend, \cod{db} resuelve a \cod{172.18.0.2}, la misma IP que asigna \cod{docker network inspect}. El error cambia a \cod{password authentication failed} contra \cod{"db" (172.18.0.2)}: hay conectividad TCP y se revela R-05.}
+\campo{Impacto}{Sin esta reparación, el backend nunca llega a la base de datos, sin importar las credenciales.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-04-antes-config.txt
+      DATABASE_URL: postgresql://appuser:wrongpass@§localhost§:5432/appdb
+# --- después ---  evidencia/R-04-despues-config.txt, -dns.txt, -network-inspect.txt, -logs.txt
+      DATABASE_URL: postgresql://appuser:wrongpass@¦db¦:5432/appdb
+¦172.18.0.2¦                                       # resolución de "db" desde el backend
+"Name": "aci606-docker-rescue-db-1",  "IPv4Address": "¦172.18.0.2/16¦"
+... connection to server at ¦"db" (172.18.0.2)¦, port 5432 failed: §FATAL:  password authentication failed for user "appuser"§
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-05 — Credenciales inconsistentes entre backend y base de datos \hfill{\normalfont\small\cod{3d1ea38}}}
+
+\begin{ficha}
+\campo{Síntoma}{\cod{FATAL: password authentication failed for user "appuser"} en el arranque del backend.}
+\campo{Evidencia}{En el \cod{config}, \cod{DATABASE\_URL} usa \cod{wrongpass} y \cod{db} define \cod{POSTGRES\_PASSWORD=rescue123}. El log de PostgreSQL registra el rechazo por la regla \cod{scram-sha-256} de \cod{pg\_hba.conf}.}
+\campo{Causa raíz}{La imagen de PostgreSQL crea el usuario con la contraseña de \cod{POSTGRES\_PASSWORD} al inicializar el clúster y exige autenticación \cod{scram-sha-256} para las conexiones de red. El backend presentaba otra contraseña.}
+\campo{Elemento modificado}{\cod{compose.yaml}, contraseña en \cod{DATABASE\_URL}.}
+\campo{Reparación}{\cod{wrongpass} $\to$ \cod{rescue123}. En M-02, las credenciales pasan a una sola fuente.}
+\campo{Justificación}{La fuente de verdad es la contraseña con la que ya se inicializó la base. Cambiar \cod{POSTGRES\_PASSWORD} no sirve, porque solo se aplica sobre un volumen vacío. Por eso se corrige el cliente.}
+\campo{Verificación}{Los logs muestran \cod{Application startup complete} y \cod{Uvicorn running on http://0.0.0.0:8000}. Consultado directamente (aún sin pasar por Nginx), \cod{/health} responde \cod{"database":"reachable"}.}
+\campo{Impacto}{Sin esta reparación, el backend no arranca. Es la primera vez que el sistema completo backend + db funciona.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-05-antes-config.txt
+      DATABASE_URL: postgresql://appuser:§wrongpass§@db:5432/appdb
+      POSTGRES_PASSWORD: §rescue123§
+# evidencia/R-05-antes-logs-db.txt
+db-1  | 2026-11-23 18:41:59.718 UTC [79] FATAL:  §password authentication failed for user "appuser"§
+db-1  | ... DETAIL:  Connection matched file "/var/lib/postgresql/data/pg_hba.conf" line 128: "host all all all scram-sha-256"
+# --- después ---  evidencia/R-05-despues-logs.txt, R-05-despues-health.txt
+backend-1  | INFO:     ¦Application startup complete.¦
+backend-1  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+¦{"status":"ok","database":"reachable"}¦
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-06 — Nginx reenvía la API a su propio contenedor \hfill{\normalfont\small\cod{9a6b197}}}
+
+\begin{ficha}
+\campo{Síntoma}{Con el backend ya operativo (R-05), \cod{curl -i localhost:8080/api/health} sigue devolviendo \cod{502 Bad Gateway}.}
+\campo{Evidencia}{El log de Nginx muestra \cod{connect() failed (111: Connection refused) while connecting to upstream} contra \cod{http://[::1]:8000} y \cod{http://127.0.0.1:8000}. \cod{nginx.conf} contiene \cod{proxy\_pass http://localhost:8000/}.}
+\campo{Causa raíz}{Es el mismo error conceptual que R-04, pero en Nginx: \cod{localhost} es el contenedor \cod{frontend}, que no tiene nada escuchando en el 8000. Nginx prueba las dos direcciones de \cod{localhost} (IPv6 e IPv4) y ambas fallan.}
+\campo{Elemento modificado}{\cod{frontend/nginx.conf}, \cod{location /api/}, directiva \cod{proxy\_pass}.}
+\campo{Reparación}{\cod{http://localhost:8000/} $\to$ \cod{http://backend:8000/}.}
+\campo{Justificación}{Se usa el nombre de servicio por la misma razón que en R-04. Se conserva la barra final: así Nginx quita el prefijo y \cod{/api/health} llega al backend como \cod{/health}, que es la ruta definida en FastAPI.}
+\campo{Verificación}{Tras reconstruir el frontend, \cod{/api/health} responde \cod{200 OK} con JSON y \cod{/api/items} devuelve \cod{[]}, la tabla creada y vacía.}
+\campo{Impacto}{Sin esta reparación, la interfaz carga pero todas las llamadas a datos fallan: el frontend no puede consumir la API.}
+\end{ficha}
+
+Este diagnóstico solo es concluyente porque se hizo \emph{después} de R-05. Antes, el 502 tenía dos causas posibles a la vez (el backend caído y el \cod{proxy\_pass} erróneo), y no se podía atribuir a ninguna de las dos.
+
+\begin{lstlisting}
+# evidencia/R-06-antes-curl.txt, R-06-antes-logs.txt, R-06-antes-nginxconf.txt
+§HTTP/1.1 502 Bad Gateway§
+[error] 30#30: *2 connect() failed (111: Connection refused) while connecting to upstream, ... request: "GET /api/health HTTP/1.1", upstream: §"http://[::1]:8000/health"§
+[error] 30#30: *2 connect() failed (111: Connection refused) while connecting to upstream, ... upstream: §"http://127.0.0.1:8000/health"§
+        proxy_pass http://§localhost§:8000/;
+# --- después ---  evidencia/R-06-despues-health.txt, R-06-despues-items.txt
+¦HTTP/1.1 200 OK¦
+{"status":"ok","database":"reachable"}
+[]
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\subsection{R-07 — Arranque sin esperar a que PostgreSQL esté listo \hfill{\normalfont\small\cod{d749c2d}}}
+
+\begin{ficha}
+\campo{Síntoma}{En un arranque desde cero (\cod{down} y luego \cod{up}), el backend termina con \cod{Exited (3)} mientras \cod{db} figura \cod{Up}.}
+\campo{Evidencia}{Log del backend: \cod{connection to server at "db" (172.18.0.2), port 5432 failed: Connection refused} y luego \cod{Application startup failed}. En el mismo intervalo, el log de \cod{db} muestra la inicialización del clúster y, después, \cod{database system is ready to accept connections}.}
+\campo{Causa raíz}{\cod{depends\_on: [db]} en su forma corta equivale a \cod{service\_started}: espera a que el contenedor \emph{inicie}, no a que PostgreSQL acepte conexiones. En la primera inicialización, la imagen levanta un servidor temporal sin TCP, así que durante unos segundos el puerto 5432 rechaza conexiones. El backend intenta conectarse una sola vez, en el \cod{startup}, sin reintentos, y termina.}
+\campo{Elemento modificado}{\cod{compose.yaml}: \cod{healthcheck} en \cod{db} y \cod{depends\_on} del \cod{backend}.}
+\campo{Reparación}{\cod{healthcheck: pg\_isready -U appuser -d appdb} (cada 5\,s, 10 reintentos) y \cod{depends\_on: db: condition: service\_healthy}.}
+\campo{Justificación}{Corrige la causa, que es un orden de arranque basado en \enquote{iniciado} en vez de \enquote{listo}, sin tocar el código. \cod{pg\_isready} pregunta al propio servidor si acepta conexiones, y Compose retiene el backend hasta que el healthcheck pasa a \cod{healthy}.}
+\campo{Verificación}{En un nuevo \cod{down} + \cod{up}, la salida muestra \cod{db Waiting} $\to$ \cod{db Healthy} y solo entonces \cod{backend Starting}. El backend completa su arranque y \cod{/api/health} responde \cod{reachable}.}
+\campo{Impacto}{Es una falla \emph{intermitente*} que aparece justo en los entornos nuevos, como el Codespace limpio de la prueba final. Sin esta reparación, el sistema podría fallar en la demostración aunque funcione en el equipo de desarrollo.}
+\end{ficha}
+
+\begin{lstlisting}
+# evidencia/R-07-antes-ps.txt, R-07-antes-logs-backend.txt, R-07-antes-logs-db.txt
+aci606-docker-rescue-backend-1  ...  §Exited (3)§ 23 seconds ago
+aci606-docker-rescue-db-1       ...  Up 25 seconds        5432/tcp
+... connection to server at "db" (172.18.0.2), port 5432 failed: §Connection refused§
+backend-1  | ERROR:    Application startup failed. Exiting.
+db-1  | PostgreSQL init process complete; ready for start up.
+db-1  | 2026-11-23 18:51:38.673 UTC [1] LOG:  database system is ready to accept connections
+# --- después ---  evidencia/R-07-despues-up.txt, R-07-despues-ps.txt
+ Container aci606-docker-rescue-db-1 Waiting
+ Container aci606-docker-rescue-db-1 ¦Healthy¦
+ Container aci606-docker-rescue-backend-1 Starting
+aci606-docker-rescue-db-1       ...  Up 45 seconds ¦(healthy)¦   5432/tcp
+\end{lstlisting}
+{\footnotesize *El arranque desde cero vuelve a inicializar el clúster porque, sin volumen nombrado, cada contenedor nuevo de \cod{db} recibe un volumen anónimo vacío. Esa misma observación motivó la mejora M-01.\par}
 
 % ============================================================================
 \section{Arquitectura final}
