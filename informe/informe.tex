@@ -9,7 +9,7 @@
 \newcommand{\integrantes}{%
   Integrante 1 \\
   Integrante 2}
-\newcommand{\seccion}{Sección: \_\_\_\_}
+\newcommand{\seccion}{\_\_\_\_\_\_}
 \newcommand{\fechaentrega}{\today}
 \newcommand{\repourl}{https://github.com/voidL3ss/aci606-docker-rescue}
 
@@ -35,6 +35,7 @@
 \usepackage{booktabs, tabularx, array, longtable, xltabular}
 \usepackage{caption}
 \usepackage{float}
+\usepackage{multicol}
 \usepackage{listings}
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta, fit, backgrounds, shapes.geometric, calc}
@@ -104,8 +105,14 @@
 % (xltabular: la ficha puede continuar en la página siguiente)
 \setlength{\LTpre}{0.3em}
 \setlength{\LTpost}{0.3em}
+% longtable/xltabular incrementan el contador de tablas aunque no haya \caption.
+% Dentro del grupo se redirige a un contador ficticio, así las tablas con
+% título siguen numeradas de forma correlativa.
+\newcounter{tablasintitulo}
+\newcommand{\sinnumerotabla}{%
+  \expandafter\let\csname c@table\expandafter\endcsname\csname c@tablasintitulo\endcsname}
 \newenvironment{ficha}
-  {\par\small\rowcolors{1}{fondo}{white}%
+  {\par\small\rowcolors{1}{fondo}{white}\sinnumerotabla
    \xltabular{\linewidth}{@{}>{\raggedright\arraybackslash\bfseries\sffamily}p{2.75cm}>{\raggedright\arraybackslash}X@{}}\toprule}
   {\bottomrule\endxltabular\par}
 \newcommand{\campo}[2]{#1 & #2 \\}
@@ -143,7 +150,7 @@
   \vspace{0.8cm}
 
   \begin{tabular}{@{}ll@{}}
-    \textbf{Integrantes:} & \begin{tabular}[t]{@{}l@{}}\integrantes\end{tabular} \\[0.6em]
+    \textbf{Integrantes:} & \begin{tabular}[t]{@{}l@{}}\integrantes\end{tabular} \\[1.1em]
     \textbf{Sección:}     & \seccion \\[0.6em]
     \textbf{Fecha:}       & \fechaentrega \\[0.6em]
     \textbf{Repositorio:} & \url{\repourl} \\
@@ -151,6 +158,7 @@
 
   \vfill
   \rmfamily\small
+  \setcounter{tocdepth}{1}
   \tableofcontents
 \end{titlepage}
 \setcounter{page}{1}
@@ -445,24 +453,215 @@ aci606-docker-rescue-db-1       ...  Up 45 seconds ¦(healthy)¦   5432/tcp
 
 % ============================================================================
 \section{Arquitectura final}
-\pendiente{arquitectura final y mejoras M-01 a M-03}
+
+La arquitectura conserva los tres servicios, las imágenes base y el código de la aplicación (\cod{main.py} e \cod{index.html} no se modificaron). Los cambios están en la orquestación (\cod{compose.yaml}), en la imagen del backend (\cod{Dockerfile}, \cod{requirements.txt}) y en la configuración de Nginx. El Anexo~\ref{anx:archivos} reproduce los archivos finales.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.0cm and 1.5cm,
+    svc/.append style={minimum width=2.9cm}, ext/.append style={minimum width=2cm},
+    salud/.style={draw=ok, fill=ok!7, text=ok!65!black, rounded corners=2pt,
+      font=\tiny\ttfamily, inner sep=2pt, align=center}]
+  \node[ext] (host) {Host\\\scriptsize navegador\\\scriptsize \cod{curl}};
+  \node[svc, right=of host] (fe) {\textbf{frontend}\\\scriptsize Nginx · \cod{:80}\\\scriptsize\cod{/api/} $\to$ \cod{backend:8000}};
+  \node[svc, right=of fe] (be) {\textbf{backend}\\\scriptsize FastAPI · \cod{:8000}\\\scriptsize\cod{uvicorn main:app}};
+  \node[svc, right=of be] (db) {\textbf{db}\\\scriptsize PostgreSQL 16 · \cod{:5432}};
+  \node[salud, below=4pt of fe] (hfe) {wget 127.0.0.1/};
+  \node[salud, below=4pt of be] (hbe) {urllib /health (+BD)};
+  \node[salud, below=4pt of db] (hdb) {pg\_isready};
+
+  \begin{scope}[on background layer]
+    \node[draw=docker, dashed, thick, rounded corners=6pt, fill=docker!2, inner sep=7pt,
+      fit=(fe)(be)(db)(hfe)(hbe)(hdb)] (net) {};
+  \end{scope}
+  \node[font=\scriptsize\sffamily, text=docker, anchor=south west] at (net.north west)
+    {red bridge \cod{aci606-docker-rescue\_default} · DNS por nombre de servicio};
+
+  \node[vol, below=0.7cm of net.south -| db] (vol) {volumen \cod{pgdata}};
+  \node[ext, dashed, below=0.7cm of net.south -| fe, font=\scriptsize, minimum height=0.8cm] (env)
+    {\cod{.env} (opcional): \cod{POSTGRES\_*}, \cod{FRONTEND\_PORT}};
+
+  \draw[flecha] (host) -- node[etq, above=3pt, pos=0.4] {\cod{8080}\\\cod{:80}} (fe);
+  \draw[flecha] (fe) -- node[etq, above=3pt] {\cod{backend}\\\cod{:8000}} (be);
+  \draw[flecha] (be) -- node[etq, above=3pt] {\cod{db}\\\cod{:5432}} (db);
+  \draw[flecha, dashed, gris] (hfe) -- (hbe);
+  \draw[flecha, dashed, gris] (hbe) -- (hdb);
+  \draw[gris, thick] (vol.north) -- (vol.north |- net.south);
+  \draw[-{Stealth}, gris, dotted, thick] (env.north) -- (env.north |- net.south);
+\end{tikzpicture}
+\caption{Arquitectura final. En verde, el healthcheck de cada servicio; las flechas punteadas entre ellos indican \cod{depends\_on} con \cod{condition: service\_healthy} (cada servicio espera a que el siguiente esté \emph{healthy}).}
+\label{fig:arq-final}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l >{\raggedright\arraybackslash}p{2.9cm} >{\raggedright\arraybackslash}X l l@{}}
+\toprule
+\textbf{Servicio} & \textbf{Red / puertos} & \textbf{Healthcheck} & \textbf{Arranca tras} & \textbf{Reinicio} \\
+\midrule
+\cod{frontend} & host 8080 (\cod{FRONTEND\_PORT}) $\to$ 80 & \cod{wget -q --spider http://127.0.0.1/} cada 10\,s & \cod{backend} \emph{healthy} & \cod{unless-stopped} \\
+\cod{backend} & solo interno, 8000 & \cod{python -c} con \cod{urllib} a \cod{/health}, que ejecuta \cod{SELECT 1}; cada 10\,s, \cod{start\_period} 10\,s & \cod{db} \emph{healthy} & \cod{unless-stopped} \\
+\cod{db} & solo interno, 5432; volumen \cod{pgdata} & \cod{pg\_isready -U \$POSTGRES\_USER -d \$POSTGRES\_DB} cada 5\,s, 10 reintentos & — & — \\
+\bottomrule
+\end{tabularx}
+\caption{Configuración final por servicio.}
+\end{table}
+
+\textbf{Variables.} \cod{POSTGRES\_USER}, \cod{POSTGRES\_PASSWORD}, \cod{POSTGRES\_DB} y \cod{FRONTEND\_PORT} se leen de \cod{.env}, que es opcional y está fuera de git, con valores por defecto en \cod{compose.yaml}. La \cod{DATABASE\_URL} del backend se compone a partir de esas mismas variables, así que la contraseña tiene una sola fuente. Solo el frontend publica un puerto en el host; backend y base de datos son accesibles únicamente dentro de la red del proyecto.
+
+\subsection{Mejoras obligatorias}
+
+\subsubsection*{M-01 — Persistencia con volumen nombrado \hfill{\normalfont\small\cod{25a3e91}}}
+
+La imagen de PostgreSQL declara \cod{VOLUME /var/lib/postgresql/data}. Sin una declaración en Compose, cada contenedor nuevo de \cod{db} recibía un \emph{volumen anónimo} identificado solo por un hash, y tras un \cod{down}/\cod{up} los datos quedaban huérfanos en el volumen anterior. Por eso R-07 se reproducía en cada arranque desde cero. Se declaró el volumen nombrado \cod{pgdata} y se montó en ese directorio. Compose lo etiqueta como parte del proyecto y \cod{docker compose down} no lo elimina (solo \cod{down -v}). La persistencia se demuestra en la prueba P-03.
+
+\begin{lstlisting}
+# evidencia/M-01-antes-mounts.txt
+[{"Type":"volume","Name":"§ac6d0ae968433ca727c94e89e8be5556ed36682f7810e02623cc1583f487ab78§", ... "Destination":"/var/lib/postgresql/data", ...}]
+# --- después ---  evidencia/M-01-despues-mounts.txt, M-01-despues-volume-inspect.txt
+[{"Type":"volume","Name":"¦aci606-docker-rescue_pgdata¦", ... "Destination":"/var/lib/postgresql/data", ...}]
+        "com.docker.compose.volume": "¦pgdata¦"
+\end{lstlisting}
+
+\subsubsection*{M-02 — Configuración externalizada \hfill{\normalfont\small\cod{72d7da9}, \cod{7b161a1}}}
+
+En la primera iteración, las credenciales de \cod{db} pasaron a variables \cod{\$\{POSTGRES\_*\}} leídas de \cod{.env}. Se versionó una plantilla \cod{.env.example} y se excluyó \cod{.env} de git (\cod{git check-ignore} lo confirma en \ev{M-02-despues-gitignore.txt}).
+
+Al revisar esa iteración en un \textbf{clon limpio} aparecieron dos defectos, que se trataron con la misma secuencia de síntoma, evidencia y corrección:
+
+\begin{enumerate}
+  \item \textbf{Sin \cod{.env}, el sistema no arrancaba.} Las variables quedaban vacías, PostgreSQL se negaba a inicializar el clúster y toda la cadena fallaba. Era justo el escenario de la prueba final (Codespace limpio). En el entorno de desarrollo funcionaba solo porque existía un \cod{.env} local.
+  \item \textbf{La contraseña seguía duplicada.} \cod{DATABASE\_URL} conservaba \cod{rescue123} como texto fijo, y \cod{FRONTEND\_PORT} estaba en la plantilla pero no se usaba. Cambiar la contraseña en \cod{.env} reintroducía R-05.
+\end{enumerate}
+
+La corrección agrega valores por defecto con la sintaxis \cod{\$\{VAR:-valor\}}, compone la \cod{DATABASE\_URL} desde las mismas variables y publica el puerto desde \cod{FRONTEND\_PORT}. Con un \cod{.env} simulado (contraseña \cod{NuevaClave2026}, puerto 9090), el sistema arranca coherente sobre un volumen nuevo.
+
+\begin{lstlisting}
+# evidencia/M-02-correccion-antes-up-sin-env.txt, -antes-ps-logs-db-sin-env.txt  (clon limpio, sin .env)
+level=warning msg="The \"POSTGRES_PASSWORD\" variable is not set. Defaulting to a blank string."
+db-1  | Error: §Database is uninitialized and superuser password is not specified.§
+dependency failed to start: container aci606-docker-rescue-db-1 §exited (1)§
+# evidencia/M-02-correccion-antes-valores-duplicados.txt  (.env simulado: NuevaClave2026, puerto 9090)
+      DATABASE_URL: postgresql://appuser:§rescue123§@db:5432/appdb
+      POSTGRES_PASSWORD: NuevaClave2026
+        published: §"8080"§
+# --- después ---  evidencia/M-02-correccion-despues-up-sin-env.txt  (clon limpio, sin .env)
+ Container aci606-docker-rescue-frontend-1 ¦Healthy¦
+¦exit code: 0¦
+# evidencia/M-02-correccion-despues-cambio-config.txt  (.env simulado)
+postgresql://appuser:¦NuevaClave2026¦@db:5432/appdb
+aci606-docker-rescue-frontend-1  ...  Up 10 seconds (healthy)   0.0.0.0:¦9090¦->80/tcp
+¦HTTP/1.1 200 OK¦
+\end{lstlisting}
+
+\subsubsection*{M-03 — Healthchecks y orden de arranque \hfill{\normalfont\small\cod{45f72b8}}}
+
+Además del healthcheck de \cod{db} (R-07), se agregaron healthchecks al backend y al frontend:
+
+\begin{itemize}
+  \item \textbf{Backend.} La imagen \cod{python:3.12-slim} no trae \cod{curl}, así que se usa \cod{urllib}, de la biblioteca estándar. El chequeo consulta \cod{/health}, que ejecuta \cod{SELECT 1}, de modo que \emph{healthy} significa \enquote{API viva y con base de datos}, no solo \enquote{proceso vivo}. \cod{start\_period} da margen al arranque.
+  \item \textbf{Frontend.} Se usa \cod{wget}, incluido en Alpine, contra \cod{127.0.0.1} y no contra \cod{localhost}. En Alpine, \cod{localhost} resuelve primero a \cod{::1}, y este Nginx solo escucha en IPv4: el script de la imagen que agrega \cod{listen [::]:80} se omite porque \cod{default.conf} fue reemplazado (el log lo indica con \cod{default.conf differs from the packaged version}).
+\end{itemize}
+
+El frontend pasa a esperar al backend \emph{healthy}, y backend y frontend usan \cod{restart: unless-stopped}: si el proceso termina con error, Docker lo reinicia, pero una detención manual se respeta. Así el orden de arranque completo queda \cod{db} $\to$ \cod{backend} $\to$ \cod{frontend}, y cada servicio arranca solo cuando el anterior está listo.
+
+\begin{lstlisting}
+# evidencia/M-03-antes-ps.txt
+aci606-docker-rescue-backend-1   ...  Up 3 minutes              8000/tcp
+aci606-docker-rescue-frontend-1  ...  Up 3 minutes              0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+# --- después ---  evidencia/M-03-despues-up.txt, M-03-despues-ps.txt, M-03-despues-health-backend.txt
+ Container aci606-docker-rescue-backend-1 Waiting
+ Container aci606-docker-rescue-backend-1 ¦Healthy¦
+ Container aci606-docker-rescue-frontend-1 Starting
+aci606-docker-rescue-backend-1   ...  Up 55 seconds ¦(healthy)¦   8000/tcp
+aci606-docker-rescue-db-1        ...  Up 2 minutes ¦(healthy)¦    5432/tcp
+aci606-docker-rescue-frontend-1  ...  Up 49 seconds ¦(healthy)¦   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+{"Status":"¦healthy¦","FailingStreak":0,"Log":[{..."ExitCode":0,"Output":""}, ...]}
+\end{lstlisting}
 
 % ============================================================================
 \section{Pruebas de validación}
-\pendiente{pruebas P-01 a P-07}
+
+Las seis pruebas obligatorias se ejecutaron sobre el sistema final (commit \cod{aaeaac4}). La prueba P-07 reproduce la validación de la pauta en un entorno limpio con el script versionado \cod{scripts/p07-validacion-limpia.sh}.
+
+{\small\rowcolors{2}{fondo}{white}\sinnumerotabla
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.05cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{1.25cm}@{}}
+\toprule
+\bfseries Prueba & \bfseries Procedimiento & \bfseries Resultado observado & \bfseries Evid. \\
+\midrule
+\endhead
+\textbf{\sffamily P-01}\newline Arranque limpio & \cod{docker compose down -v} (elimina contenedores, red y volumen) y luego \cod{docker compose up --build -d}. & Se construyen las imágenes y los servicios arrancan en orden (\cod{db Healthy} $\to$ \cod{backend Healthy} $\to$ \cod{frontend}). Los tres quedan \cod{Up (healthy)}. & \ruta{P-01-*} \\
+\textbf{\sffamily P-02}\newline Comunicación & \cod{POST /api/items} con \cod{\{"name":"persistencia-ok"\}}, \cod{GET /api/items}, \cod{/api/health} y una consulta \cod{psql} dentro de \cod{db}. & El POST devuelve el ítem con \cod{id 1} y el GET lo lista. La fila existe en la tabla \cod{items} y \cod{/health} informa \cod{reachable}: el dato recorrió API $\to$ PostgreSQL y volvió. & \ruta{P-02-*} \\
+\textbf{\sffamily P-03}\newline Persistencia & \cod{docker compose down} (sin \cod{-v}), \cod{ps} y \cod{volume ls}; después \cod{up -d} y \cod{GET /api/items}. & Contenedores y red eliminados (\cod{ps} vacío), pero el volumen \cod{pgdata} sigue listado. Tras recrear, el ítem \cod{id 1} sigue presente con el mismo \cod{created\_at}. & \ruta{P-03-*} \\
+\textbf{\sffamily P-04}\newline Fallo controlado & \cod{docker compose stop db}; luego \cod{curl -i} a \cod{/}, \cod{/api/health} y \cod{/api/items} a través de \cod{:8080}. & El frontend sigue sirviendo \cod{index.html} (\cod{200}). \cod{/api/health} responde \cod{503} con \cod{could not translate host name "db"} y \cod{/api/items}, \cod{500}. & \ruta{P-04-*} \\
+\textbf{\sffamily P-05}\newline Diagnóstico & \cod{docker compose ps}, \cod{docker inspect} (\cod{.State.Health}) del backend y logs de \cod{backend} y \cod{db}. & \cod{db} queda \cod{Exited (0)} (\cod{received fast shutdown request}: detención ordenada, no caída). \cod{backend} queda \cod{Up (unhealthy)} con \cod{FailingStreak 7}, y el frontend sigue \cod{healthy}. & \ruta{P-05-*} \\
+\textbf{\sffamily P-06}\newline Recuperación & \cod{docker compose start db}; \cod{ps}, \cod{/api/health} y \cod{/api/items}. & \cod{db} vuelve a \cod{healthy}, y el backend también, \emph{sin reiniciarse} (\cod{pool\_pre\_ping} reabre la conexión). El ítem de P-02 sigue disponible. & \ruta{P-06-*} \\
+\textbf{\sffamily P-07}\newline Entorno limpio & En un Codespace nuevo, sin \cod{.env} ni volumen previo: \cod{bash scripts/p07-validacion-limpia.sh}, que ejecuta \cod{up --build -d --wait}, \cod{ps}, \cod{curl} a \cod{/} y \cod{/api/health}, POST y GET de ítems por \cod{:8080}, \cod{psql} y la comprobación de que \cod{.env} no está versionado. & \pendiente{resultado en Codespace}. Validación previa en un clon limpio local: el arranque sin \cod{.env} termina con \cod{exit code 0}, los tres servicios quedan \cod{healthy} y \cod{/api/health} responde \cod{200} (\ev{M-02-correccion-despues-*}). & \ruta{P-07-*} \\
+\bottomrule
+\end{xltabular}}
+
+\textbf{Lectura del fallo controlado (P-04 y P-05).} Detener la base de datos afecta solo a la parte dinámica: la interfaz estática sigue disponible y la API se degrada de forma visible. El healthcheck del backend detecta el problema, porque \cod{/health} consulta la base, y lo marca \cod{unhealthy}. Docker no reinicia contenedores \emph{unhealthy}, lo cual es correcto aquí: la causa está en \cod{db}, no en el backend.
+
+El mensaje de error permite distinguir tres fallas de base de datos distintas, vistas a lo largo del trabajo:
+
+\begin{itemize}
+  \item \cod{could not translate host name "db"}: el contenedor está detenido y salió del DNS de la red (P-04).
+  \item \cod{Connection refused}: el contenedor existe pero PostgreSQL aún no escucha (R-07).
+  \item \cod{password authentication failed}: hay conexión, pero las credenciales no coinciden (R-05).
+\end{itemize}
 
 % ============================================================================
 \section{Conclusiones}
-\pendiente{conclusiones}
+
+\textbf{Aprendizajes técnicos.}
+\begin{itemize}
+  \item \textbf{\cod{localhost} es local a cada contenedor.} Dos de las siete fallas (R-04 y R-06) se deben a esto. Entre servicios se comunica por nombre de servicio, que resuelve el DNS interno de la red de Compose.
+  \item \textbf{\cod{Up} no significa operativo.} El frontend estaba \cod{Up} e inaccesible (R-01), y el backend \cod{Up} pero sin base de datos (P-05). Hay que verificar extremo a extremo con \cod{curl} y declarar healthchecks que midan la funcionalidad real.
+  \item \textbf{Las fallas encadenadas exigen cambiar una cosa a la vez.} Cada corrección reveló la siguiente. Separar cambios que parecían uno solo (R-04/R-05) permitió atribuir cada efecto a su causa, y repetir un diagnóstico en el momento oportuno (R-06 después de R-05) lo volvió concluyente.
+  \item \textbf{Iniciado no es lo mismo que listo.} \cod{depends\_on} en su forma corta no evita carreras (R-07). Hacen falta un healthcheck y \cod{condition: service\_healthy}.
+  \item \textbf{La reproducibilidad se prueba en un entorno limpio.} La primera versión de M-02 funcionaba en el equipo de desarrollo gracias a un \cod{.env} local y fallaba en un clon nuevo. Lo mismo ocurre con los volúmenes: con datos previos, Postgres no se reinicializa y oculta problemas de configuración.
+\end{itemize}
+
+\textbf{Decisiones adoptadas.} Se reparó la configuración y no el código fuente (\cod{main.py} e \cod{index.html} quedan intactos). Los valores por defecto en \cod{compose.yaml} se priorizaron para cumplir el requisito de un único comando en un entorno limpio, sin pasos manuales. El healthcheck del backend se diseñó para incluir la base de datos, de modo que el estado reportado refleje el servicio real. Cada decisión quedó en un commit propio con su evidencia.
+
+\textbf{Limitaciones.}
+\begin{itemize}
+  \item Las credenciales por defecto están en texto plano en \cod{compose.yaml} y \cod{.env.example}. Es aceptable en un contexto académico; en producción se usarían \emph{Docker secrets} o un gestor de secretos, y no habría contraseña por defecto.
+  \item Nginx resuelve \cod{backend} una sola vez, al arrancar. Si el backend se recrea y cambia de IP, el frontend puede seguir apuntando a la IP anterior (502) hasta reiniciarse. Se mitiga con \cod{resolver 127.0.0.11} y un \cod{proxy\_pass} con variable.
+  \item \cod{pg\_isready} sin \cod{-h} consulta por socket Unix, y en la primera inicialización también responde el servidor temporal. Usar \cod{-h 127.0.0.1} exigiría TCP y cerraría por completo la ventana de R-07.
+  \item El backend no reintenta su conexión inicial y \cod{/api/items} responde \cod{500} sin detalle cuando la base no está disponible (P-04). Mejorarlo requiere cambiar el código, que estaba fuera del alcance.
+\end{itemize}
 
 % ============================================================================
 \section{Repositorio}
-\url{\repourl}
+
+\begin{center}
+\large\url{\repourl}
+\end{center}
+
+El repositorio contiene el proyecto reparado (\cod{compose.yaml}, \cod{backend/}, \cod{frontend/}), \cod{.env.example}, el \cod{README.md} con el diagrama de arquitectura y los procedimientos para construir, iniciar, verificar, detener y recrear la solución, el script de validación \cod{scripts/p07-validacion-limpia.sh}, la carpeta \cod{evidencia/} y este informe en \cod{informe/}. Cada reparación, mejora y prueba tiene su propio commit (Anexo~\ref{anx:historial}).
 
 % ============================================================================
+\clearpage
 \appendix
 \section{Anexos}
+
+\subsection{Historial de commits}\label{anx:historial}
+\IfFileExists{historial.txt}
+  {\lstinputlisting[style=term, basicstyle=\ttfamily\scriptsize]{historial.txt}}
+  {\textit{Se genera al compilar con \cod{latexmk} desde el repositorio (\cod{git log}).}}
+
 \subsection{Índice de evidencias}\label{anx:evidencias}
-\pendiente{anexos}
+\IfFileExists{evidencias.txt}
+  {\lstinputlisting[style=term, basicstyle=\ttfamily\scriptsize, multicols=3]{evidencias.txt}}
+  {\textit{Se genera al compilar con \cod{latexmk} (contenido de \cod{evidencia/}).}}
+
+\clearpage
+\subsection{Archivos finales}\label{anx:archivos}
+\lstinputlisting[style=file, title={\cod{compose.yaml}}]{../compose.yaml}
+\lstinputlisting[style=file, title={\cod{frontend/nginx.conf}}]{../frontend/nginx.conf}
+\lstinputlisting[style=file, title={\cod{backend/Dockerfile}}]{../backend/Dockerfile}
+\lstinputlisting[style=file, title={\cod{backend/requirements.txt}}]{../backend/requirements.txt}
+\lstinputlisting[style=file, title={\cod{.env.example}}]{../.env.example}
 
 \end{document}
