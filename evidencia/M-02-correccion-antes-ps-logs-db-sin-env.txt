@@ -1,0 +1,22 @@
+$ docker compose ps -a
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_USER\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_PASSWORD\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_DB\" variable is not set. Defaulting to a blank string."
+NAME                              IMAGE                           COMMAND                  SERVICE    CREATED         STATUS                     PORTS
+aci606-docker-rescue-backend-1    aci606-docker-rescue-backend    "uvicorn main:app --…"   backend    6 seconds ago   Created                    
+aci606-docker-rescue-db-1         postgres:16-alpine              "docker-entrypoint.s…"   db         6 seconds ago   Exited (1) 5 seconds ago   
+aci606-docker-rescue-frontend-1   aci606-docker-rescue-frontend   "/docker-entrypoint.…"   frontend   6 seconds ago   Created                    
+
+$ docker compose logs db
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_USER\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_PASSWORD\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:17-03:00" level=warning msg="The \"POSTGRES_DB\" variable is not set. Defaulting to a blank string."
+db-1  | Error: Database is uninitialized and superuser password is not specified.
+db-1  |        You must specify POSTGRES_PASSWORD to a non-empty value for the
+db-1  |        superuser. For example, "-e POSTGRES_PASSWORD=password" on "docker run".
+db-1  | 
+db-1  |        You may also use "POSTGRES_HOST_AUTH_METHOD=trust" to allow all
+db-1  |        connections without a password. This is *not* recommended.
+db-1  | 
+db-1  |        See PostgreSQL documentation about "trust":
+db-1  |        https://www.postgresql.org/docs/current/auth-trust.html

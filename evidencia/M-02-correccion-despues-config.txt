@@ -1,0 +1,19 @@
+$ ls -la .env
+ls: cannot access '.env': No such file or directory
+
+$ docker compose config --no-path-resolution | grep -E "POSTGRES_(USER|PASSWORD|DB)|DATABASE_URL|published|warning"
+      DATABASE_URL: postgresql://appuser:rescue123@db:5432/appdb
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: rescue123
+      POSTGRES_USER: appuser
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+        published: "8080"
+
+# Mismo .env simulado que en M-02-correccion-antes-valores-duplicados.txt
+$ docker compose --env-file cambio.env config --no-path-resolution | grep -E "POSTGRES_(USER|PASSWORD|DB)|DATABASE_URL|published|warning"
+      DATABASE_URL: postgresql://appuser:NuevaClave2026@db:5432/appdb
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: NuevaClave2026
+      POSTGRES_USER: appuser
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+        published: "9090"

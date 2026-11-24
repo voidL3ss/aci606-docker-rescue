@@ -1,0 +1,15 @@
+$ docker compose ps
+NAME                              IMAGE                           COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+aci606-docker-rescue-backend-1    aci606-docker-rescue-backend    "uvicorn main:app --…"   backend    22 seconds ago   Up 16 seconds (healthy)   8000/tcp
+aci606-docker-rescue-db-1         postgres:16-alpine              "docker-entrypoint.s…"   db         22 seconds ago   Up 21 seconds (healthy)   5432/tcp
+aci606-docker-rescue-frontend-1   aci606-docker-rescue-frontend   "/docker-entrypoint.…"   frontend   22 seconds ago   Up 10 seconds (healthy)   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+
+$ curl -i localhost:8080/api/health
+HTTP/1.1 200 OK
+Server: nginx/1.27.5
+Date: Tue, 24 Nov 2026 03:49:24 GMT
+Content-Type: application/json
+Content-Length: 38
+Connection: keep-alive
+
+{"status":"ok","database":"reachable"}

@@ -1,0 +1,31 @@
+# Volumen vacío (docker compose down -v) y arranque con el .env simulado (contraseña NuevaClave2026, puerto 9090)
+$ docker compose --env-file cambio.env up --build -d --wait
+ Container aci606-docker-rescue-db-1 Healthy 
+ Container aci606-docker-rescue-backend-1 Healthy 
+ Container aci606-docker-rescue-db-1 Healthy 
+ Container aci606-docker-rescue-backend-1 Healthy 
+ Container aci606-docker-rescue-frontend-1 Healthy 
+exit code: 0
+
+$ docker compose ps
+NAME                              IMAGE                           COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+aci606-docker-rescue-backend-1    aci606-docker-rescue-backend    "uvicorn main:app --…"   backend    22 seconds ago   Up 16 seconds (healthy)   8000/tcp
+aci606-docker-rescue-db-1         postgres:16-alpine              "docker-entrypoint.s…"   db         22 seconds ago   Up 21 seconds (healthy)   5432/tcp
+aci606-docker-rescue-frontend-1   aci606-docker-rescue-frontend   "/docker-entrypoint.…"   frontend   22 seconds ago   Up 10 seconds (healthy)   0.0.0.0:9090->80/tcp, [::]:9090->80/tcp
+
+$ docker compose exec backend printenv DATABASE_URL
+postgresql://appuser:NuevaClave2026@db:5432/appdb
+
+$ curl -i localhost:9090/api/health
+HTTP/1.1 200 OK
+Server: nginx/1.27.5
+Date: Tue, 24 Nov 2026 03:50:22 GMT
+Content-Type: application/json
+Content-Length: 38
+Connection: keep-alive
+
+{"status":"ok","database":"reachable"}
+
+$ curl -sS localhost:8080/api/health   # el puerto anterior ya no se publica
+curl: (7) Failed to connect to localhost:8080 after 0 ms: Could not connect to server
+

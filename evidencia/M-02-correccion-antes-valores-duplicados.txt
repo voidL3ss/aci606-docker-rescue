@@ -1,0 +1,11 @@
+# Se simula un .env que cambia la contraseña y el puerto (copia de .env.example modificada):
+$ cat cambio.env
+POSTGRES_USER=appuser
+POSTGRES_PASSWORD=NuevaClave2026
+POSTGRES_DB=appdb
+FRONTEND_PORT=9090
+
+$ docker compose --env-file cambio.env config --no-path-resolution | grep -E "POSTGRES_PASSWORD|DATABASE_URL|published"
+      DATABASE_URL: postgresql://appuser:rescue123@db:5432/appdb
+      POSTGRES_PASSWORD: NuevaClave2026
+        published: "8080"

@@ -1,0 +1,84 @@
+$ ls -la .env
+ls: cannot access '.env': No such file or directory
+
+$ docker compose config --no-path-resolution
+time="2026-11-24T00:46:58-03:00" level=warning msg="The \"POSTGRES_USER\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:58-03:00" level=warning msg="The \"POSTGRES_PASSWORD\" variable is not set. Defaulting to a blank string."
+time="2026-11-24T00:46:58-03:00" level=warning msg="The \"POSTGRES_DB\" variable is not set. Defaulting to a blank string."
+name: aci606-docker-rescue
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+        required: true
+    environment:
+      DATABASE_URL: postgresql://appuser:rescue123@db:5432/appdb
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')
+      timeout: 5s
+      interval: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      default: null
+    restart: unless-stopped
+  db:
+    environment:
+      POSTGRES_DB: ""
+      POSTGRES_PASSWORD: ""
+      POSTGRES_USER: ""
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      timeout: 3s
+      interval: 5s
+      retries: 10
+    image: postgres:16-alpine
+    networks:
+      default: null
+    volumes:
+      - type: volume
+        source: pgdata
+        target: /var/lib/postgresql/data
+        volume: {}
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+        required: true
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - --spider
+        - http://127.0.0.1/
+      timeout: 3s
+      interval: 10s
+      retries: 3
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 80
+        published: "8080"
+        protocol: tcp
+    restart: unless-stopped
+networks:
+  default:
+    name: aci606-docker-rescue_default
+volumes:
+  pgdata:
+    name: aci606-docker-rescue_pgdata
